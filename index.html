@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+    <meta charset="UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="shortcut icon" href="/គណនាតារាងបាលដោយគ្រីស/footballlogo.webp" type="image/x-icon">
+    <script
+        src="https://kit.fontawesome.com/d6d651f030.js"
+        crossorigin="anonymous"
+        ></script>
+    <title>កម្មវិធីគណនាលុយតារាងបាល់ទាត់</title>
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=Odor+Mean+Chey&family=Poppins:wght@200;300;400;700&display=swap");
+
+        body {
+            font-family: "Poppins", sans-serif, "Odor Mean Chey", serif;
+            color: rgb(255, 255, 255);
+            stroke-opacity: inherit;
+            margin: 20px;
+            justify-items: center;
+            background-image: url(/គណនាតារាងបាលដោយគ្រីស/footballbd.jpeg);
+            background-size: 100% auto; /* ទទឹង 100% និង បណ្តោយ 50% */
+        }
+
+        /* ធ្វើអោយអក្សរចេញមកលើ Overlay */
+        h1 {
+            font-size: 1.6em; 
+            /* កំណត់ទំហំអក្សរ */
+            color: #f0f7f5; /* ពណ៌អក្សរ */
+            text-shadow: 5px 3px 8px rgba(0, 0, 0, 0.959); /* បង្កើតស្រមោលអក្សរ */
+            /* -webkit-text-stroke: 0.01px rgb(4, 100, 52); */
+            font-weight: bold;
+        }
+        label{
+            text-shadow: 2px 2px 10px  rgb(17, 1, 1);
+            -webkit-text-stroke: 0.1px rgb(255, 255, 255);
+        }
+
+        label, input, button {
+            height: 30px;
+            margin: 10px 0;
+        }
+        button{
+            background-color: rgb(46, 233, 124);
+            font-family: "Poppins", sans-serif, "Odor Mean Chey", serif;
+            text-shadow: 2px 2px 10px  rgb(17, 1, 1);
+        }
+        #result {
+            margin-top: 20px;
+        }
+        .completed {
+            color: green;
+            font-weight: bold;
+        }
+        .incomplete {
+            color: red;
+            font-weight: bold;
+        }
+        .btn {
+            padding: 5px 15px;
+            margin-top: 5px;
+            cursor: pointer;
+        }
+        .btn-complete {
+            background-color: green;
+            color: white;
+        }
+        .btn-incomplete {
+            background-color: red;
+            color: white;
+        }
+        .player-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .player-name {
+            margin-right: 10px;
+        }
+        .total-sum {
+            font-weight: bold;
+            margin-top: 15px;
+        }
+        .total-collected {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .remaining-amount {
+            margin-top: 10px;
+            font-weight: bold;
+            color: orange;
+        }
+        .player-row input[type="number"] {
+            width: 80px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>កម្មវិធីគណនាលុយតារាងបាល់ទាត់</h1>
+    <label for="totalAmount">បញ្ចូលចំនួនលុយសរុប ($):</label><br>
+    <input type="number" id="totalAmount" placeholder="ចំនួនលុយសរុប" required>
+    <br>
+    <label for="numPeople">បញ្ចូលចំនួនមនុស្សដែលលេង:</label><br>
+    <input type="number" id="numPeople" placeholder="ចំនួនមនុស្ស" required>
+
+    <br>
+
+    <button onclick="calculate()"><i class="fa-regular fa-futbol"></i> ចុចទីនេះដើម្បីគណនា</i></button>
+
+    <div id="result"></div>
+
+    <div id="collectButtonContainer" style="display:none;">
+        <button onclick="collectPayments()">ប្រមូលលុយ</button>
+    </div>
+
+    <script>
+        let amountPerPerson;
+        let totalAmount;
+        let numPeople;
+        let payments = [];
+        let completedPayments = [];
+        let totalCollected = 0;
+
+        function calculate() {
+            totalAmount = parseFloat(document.getElementById("totalAmount").value);
+            numPeople = parseInt(document.getElementById("numPeople").value);
+
+            if (isNaN(totalAmount) || isNaN(numPeople) || numPeople <= 0) {
+                alert("សូមបញ្ចូលចំនួនលុយសរុប និងចំនួនមនុស្សត្រឹមត្រូវ!");
+                return;
+            }
+
+            amountPerPerson = totalAmount / numPeople;
+            let resultDiv = document.getElementById("result");
+            resultDiv.innerHTML = `<p>ចំនួនលុយម្នាក់ៗដែលត្រូវបង់៖ <input type="number" id="amountPerPerson" value="${amountPerPerson.toFixed(2)}" onchange="updateAmountPerPerson()" /></p>`;
+
+            let paymentsList = [];
+            for (let i = 1; i <= numPeople; i++) {
+                paymentsList.push(`
+                    <div class="player-row">
+                        <input type="text" id="name${i}" placeholder="ឈ្មោះកីឡាករ ${i}" class="player-name">
+                        <input type="number" id="amount${i}" value="${amountPerPerson.toFixed(2)}" placeholder="តម្លៃលុយ" class="player-amount" onchange="updatePayment(${i})">
+                        <button id="paymentStatus${i}" class="btn btn-incomplete" onclick="toggleCompletion(${i})">❌</button>
+                    </div>
+                `);
+            }
+
+            resultDiv.innerHTML += `<p>ចំនួនលុយដែលបានចែកសម្រាប់កីឡាករ៖</p><div>`;
+            paymentsList.forEach(payment => {
+                resultDiv.innerHTML += payment;
+            });
+            resultDiv.innerHTML += `</div>`;
+
+            resultDiv.innerHTML += `<div class="total-sum">សរុបចំនួនលុយដែលត្រូវបង់៖ $${totalAmount.toFixed(2)}</div>`;
+            resultDiv.innerHTML += `<div class="total-collected">ចំនួនលុយដែលបានបង់៖ $0.00</div>`;
+            resultDiv.innerHTML += `<div class="remaining-amount">ចំនួនលុយដែលនៅសល់៖ $0.00</div>`;
+            document.getElementById("collectButtonContainer").style.display = "block";
+        }
+
+        function toggleCompletion(playerId) {
+            let button = document.getElementById(`paymentStatus${playerId}`);
+            let nameInput = document.getElementById(`name${playerId}`);
+            
+            if (button.textContent === '❌') {
+                button.textContent = '✓';
+                button.className = 'btn btn-complete';
+                completedPayments.push(playerId);
+            } else {
+                button.textContent = '❌';
+                button.className = 'btn btn-incomplete';
+                let index = completedPayments.indexOf(playerId);
+                if (index > -1) {
+                    completedPayments.splice(index, 1);
+                }
+            }
+
+            updateTotalCollected();
+        }
+
+        function updateTotalCollected() {
+            totalCollected = 0;
+            completedPayments.forEach(playerId => {
+                totalCollected += parseFloat(document.getElementById(`amount${playerId}`).value);
+            });
+
+            let totalCollectedDiv = document.querySelector(".total-collected");
+            totalCollectedDiv.innerHTML = `ចំនួនលុយដែលបានបង់៖ $${totalCollected.toFixed(2)}`;
+
+            let remainingAmountDiv = document.querySelector(".remaining-amount");
+            let remainingAmount = totalCollected - totalAmount;
+            if (remainingAmount > 0) {
+                remainingAmountDiv.innerHTML = `ចំនួនលុយដែលនៅសល់៖ $${remainingAmount.toFixed(2)}`;
+            } else {
+                remainingAmountDiv.innerHTML = `ចំនួនលុយដែលនៅសល់៖ $0.00`;
+            }
+        }
+
+        function updatePayment(playerId) {
+            let amount = parseFloat(document.getElementById(`amount${playerId}`).value);
+            if (!isNaN(amount) && amount > 0) {
+                updateTotalCollected();
+            }
+        }
+
+        function updateAmountPerPerson() {
+            amountPerPerson = parseFloat(document.getElementById("amountPerPerson").value);
+            if (!isNaN(amountPerPerson) && amountPerPerson > 0) {
+                for (let i = 1; i <= numPeople; i++) {
+                    document.getElementById(`amount${i}`).value = amountPerPerson.toFixed(2);
+                }
+
+                updateTotalCollected();
+            }
+        }
+
+        function collectPayments() {
+            payments = [];
+            totalCollected = 0;
+
+            for (let i = 1; i <= numPeople; i++) {
+                let payment;
+                while (true) {
+                    payment = prompt(`បញ្ចូលចំនួនលុយដែលមនុស្សទី ${i} (${document.getElementById('name' + i).value}):`);
+                    if (payment === null) {
+                        alert("ការបញ្ចូលបានបោះបង់!");
+                        return;
+                    }
+
+                    if (payment === "" || isNaN(payment) || parseFloat(payment) <= 0) {
+                        alert("សូមបញ្ចូលចំនួនលុយត្រឹមត្រូវ!");
+                    } else {
+                        totalCollected += parseFloat(payment);
+                        payments.push(`កីឡាករ ${i} (${document.getElementById('name' + i).value}): $${parseFloat(payment).toFixed(2)} (ចំនួនលុយដែលបានចែក: $${amountPerPerson.toFixed(2)})`);
+                        break;
+                    }
+                }
+            }
+
+            let feedback = `<p>ចំនួនលុយសរុបបច្ចុប្បន្នគឺ៖ $${totalCollected.toFixed(2)}</p>`;
+            if (totalCollected === totalAmount) {
+                feedback += "<p>ការបង់លុយគ្រប់គ្នាដល់គោលដៅ!</p>";
+            } else {
+                feedback += `<p>អ្នកត្រូវបង់បន្ថែម $${(totalAmount - totalCollected).toFixed(2)} ទៀត</p>`;
+                if (totalCollected > totalAmount) {
+                    feedback += `<p>អ្នកមានលុយលើស $${(totalCollected - totalAmount).toFixed(2)}</p>`;
+                }
+            }
+
+            document.getElementById("result").innerHTML += feedback;
+
+            alert("ការបង់លុយសម្រាប់កីឡាករម្នាក់ៗ៖\n" + payments.join("\n"));
+        }
+    </script>
+
+</body>
+</html>
